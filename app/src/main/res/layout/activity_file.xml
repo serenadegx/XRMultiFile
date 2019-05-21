@@ -11,7 +11,6 @@
         android:layout_height="?attr/actionBarSize"
         android:background="?attr/colorPrimary"
         app:navigationIcon="@mipmap/back"
-        app:subtitle="sdcard"
         app:subtitleTextColor="@android:color/white"
         app:title="手机存储"
         app:titleTextColor="@android:color/white">
@@ -21,7 +20,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="right|center_vertical"
-            android:layout_margin="10dp"
             android:background="?selectableItemBackground"
             android:text="确定"
             android:textColor="@android:color/white" />
@@ -35,12 +33,15 @@
     <FrameLayout
         android:background="#333333"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="50dp">
         <Spinner
+            android:id="@+id/spinner"
+
             android:layout_margin="10dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"></Spinner>
         <TextView
+            android:id="@+id/tv_total"
             android:text="已选"
             android:textSize="16sp"
             android:layout_gravity="right|center_vertical"
