@@ -11,12 +11,13 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.Settings;
-import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 
@@ -25,9 +26,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -42,6 +41,8 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 
 public class FileActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -58,6 +59,8 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
     private Button btSure;
     private int limit;
     private TextView tvTotal;
+    private View notDataView;
+    private FrameLayout frameLayout;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -68,6 +71,7 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
         spinner = findViewById(R.id.spinner);
         toolbar = findViewById(R.id.toolbar);
         rv = findViewById(R.id.rv);
+        notDataView = getLayoutInflater().inflate(R.layout.layout_empty, (ViewGroup) rv.getParent(), false);
         rv.setLayoutManager(new LinearLayoutManager(this));
         rv.addItemDecoration(new EMDecoration(this, EMDecoration.VERTICAL_LIST, R.drawable.list_divider, 10));
         btSure = findViewById(R.id.bt_sure);
@@ -151,13 +155,11 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
                     data.setFile(file);
                     data.setName(file.getName());
                     if (file.isDirectory()) {
-                        setFileType(file,data);
-                        data.setFileType(XRFile.FOLDER);
                         data.setSize(getDirectorySize(file));
                     } else {
-                        data.setFileType(XRFile.OTHER);
                         data.setSize(getPrintSize(getRealSize(file)));
                     }
+                    setFileType(file, data);
                     data.setTime(getPrintTime(file.lastModified()));
                     list.add(data);
                 }
@@ -174,17 +176,48 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
                 return o1.getName().compareTo(o2.getName());
             }
         });
-        adapter.setNewData(list);
+        if (list.size() < 1) {
+            adapter.setEmptyView(notDataView);
+        }else {
+            adapter.setNewData(list);
+        }
     }
 
     private void setFileType(File file, XRFile data) {
-        if (file.isDirectory()){
+        if (file.isDirectory()) {
             data.setFileType(XRFile.FOLDER);
             return;
         }
-        switch (file.getName().substring(file.getName().indexOf("."))){
-            case "vid":
-
+        Log.i("mango", "type:" + file.getName().substring(file.getName().indexOf(".") + 1));
+        switch (file.getName().substring(file.getName().indexOf(".") + 1)) {
+            case "mp4":
+                data.setFileType(XRFile.VIDEO);
+                break;
+            case "jpg":
+            case "gif":
+            case "png":
+                data.setFileType(XRFile.PICTURE);
+                break;
+            case "mp3":
+                data.setFileType(XRFile.AUDIO);
+                break;
+            case "pdf":
+                data.setFileType(XRFile.PDF);
+                break;
+            case "docx":
+                data.setFileType(XRFile.WORD);
+                break;
+            case "xlsx":
+                data.setFileType(XRFile.EXCEL);
+                break;
+            case "pptx":
+                data.setFileType(XRFile.PPT);
+                break;
+            case "zip":
+                data.setFileType(XRFile.ZIP);
+                break;
+            default:
+                data.setFileType(XRFile.OTHER);
                 break;
         }
     }
@@ -220,6 +253,18 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
                     initFileData(file.getFile());
                     String path = file.getFile().getPath();
                     toolbar.setSubtitle(path.substring(external.length()));
+                } else {
+                    if (file.getFileType() == XRFile.PICTURE) {
+                        ShowActivity.start2ShowActivity(FileActivity.this, file);
+                    } else if (file.getFileType() == XRFile.VIDEO) {
+                        start2Player("video/*", file.getFile());
+                    } else if (file.getFileType() == XRFile.AUDIO) {
+                        start2Player("audio/*", file.getFile());
+                    } else if (file.getFileType() == XRFile.PDF || file.getFileType() == XRFile.WORD ||
+                            file.getFileType() == XRFile.PPT || file.getFileType() == XRFile.EXCEL ||
+                            file.getFileType() == XRFile.TXT) {
+                        ShowActivity.start2ShowActivity(FileActivity.this, file);
+                    }
                 }
             }
         });
@@ -231,6 +276,12 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
                 tvTotal.setText(mSelects.size() > 0 ? "已选：" + getTotal() : "");
             }
         });
+    }
+
+    private void start2Player(String type, File file) {
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setDataAndType(Uri.fromFile(file), type);
+        startActivity(intent);
     }
 
     private void showPermissionDialog() {
@@ -309,6 +360,8 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
         }
         return size;
     }
+
+
 
     public String getPrintSize(long size) {
         //如果字节数少于1024，则直接以B为单位，否则先除于1024，后3位因太少无意义

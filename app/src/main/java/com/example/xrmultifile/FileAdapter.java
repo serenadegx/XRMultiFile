@@ -7,6 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -21,7 +22,10 @@ import androidx.annotation.NonNull;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.RecyclerView;
 
+import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+
 public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder> {
+    private FrameLayout mEmptyLayout;
     private Context mContext;
     private List<XRFile> mData = new ArrayList<>();
     private List<XRFile> mSelects = new ArrayList<>();
@@ -58,25 +62,32 @@ public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder
             case 1:     //picture
                 Picasso.get()
                         .load(file.getFile())
-                        .resize(px2dp(50), px2dp(50))
+                        .resize(px2dp(200), px2dp(200))
                         .centerCrop()
                         .into(holder.iv);
                 break;
             case 2:     //video
                 holder.iv.setImageResource(R.mipmap.ic_video);
                 break;
-            case 3:     //pdf
+            case 3:     //audio
+                holder.iv.setImageResource(R.mipmap.ic_music);
+                break;
+            case 4:     //pdf
                 holder.iv.setImageResource(R.mipmap.ic_pdf);
                 break;
-            case 4:     //word
+            case 5:     //word
                 holder.iv.setImageResource(R.mipmap.ic_word);
                 break;
-            case 5:     //sheet
-                holder.iv.setImageResource(R.mipmap.ic_excel);
             case 6:     //sheet
+                holder.iv.setImageResource(R.mipmap.ic_excel);
+                break;
+            case 7:     //ppt
                 holder.iv.setImageResource(R.mipmap.ic_ppt);
                 break;
-            case 7:     //zip
+            case 8:     //txt
+                holder.iv.setImageResource(R.mipmap.ic_txt);
+                break;
+            case 9:     //zip
                 holder.iv.setImageResource(R.mipmap.ic_zip);
                 break;
             default:    //other
@@ -115,11 +126,6 @@ public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder
 
     }
 
-    private int px2dp(int i) {
-        float scale = mContext.getResources().getDisplayMetrics().density;
-        return (int) (i / scale + 0.5f);
-    }
-
     @Override
     public int getItemCount() {
         return mData.size();
@@ -128,6 +134,11 @@ public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder
     public void setNewData(List<XRFile> data) {
         mData = data;
         notifyDataSetChanged();
+    }
+
+    private int px2dp(int i) {
+        float scale = mContext.getResources().getDisplayMetrics().density;
+        return (int) (i / scale + 0.5f);
     }
 
     public void setItemClickListener(ItemClickListener itemClickListener) {
@@ -163,5 +174,26 @@ public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder
 
     public interface ItemSelectListener {
         void onItemSelectListener(View v, List<XRFile> selects, int position);
+    }
+
+    public void setEmptyView(View emptyView) {
+        boolean insert = false;
+        if (mEmptyLayout == null) {
+            mEmptyLayout = new FrameLayout(emptyView.getContext());
+            final RecyclerView.LayoutParams layoutParams = new RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+            final ViewGroup.LayoutParams lp = emptyView.getLayoutParams();
+            if (lp != null) {
+                layoutParams.width = lp.width;
+                layoutParams.height = lp.height;
+            }
+            mEmptyLayout.setLayoutParams(layoutParams);
+            insert = true;
+        }
+        mEmptyLayout.removeAllViews();
+        mEmptyLayout.addView(emptyView);
+        if (insert) {
+            notifyItemInserted(0);
+        }
+
     }
 }

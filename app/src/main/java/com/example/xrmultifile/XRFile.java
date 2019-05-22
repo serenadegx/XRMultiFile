@@ -1,19 +1,23 @@
 package com.example.xrmultifile;
 
 import java.io.File;
+import java.io.Serializable;
 
 import androidx.annotation.Nullable;
 
-class XRFile {
+class XRFile implements Serializable {
 
     public static final int FOLDER = 0;
-    public static final int video = 2;
-    public static final int pdf = 3;
-    public static final int word = 4;
-    public static final int excel = 5;
-    public static final int ppt = 6;
-    public static final int zip = 7;
-    public static final int OTHER = 8;
+    public static final int PICTURE = 1;
+    public static final int VIDEO = 2;
+    public static final int AUDIO = 3;
+    public static final int PDF = 4;
+    public static final int WORD = 5;
+    public static final int EXCEL = 6;
+    public static final int PPT = 7;
+    public static final int TXT = 8;
+    public static final int ZIP = 9;
+    public static final int OTHER = 10;
     private int fileType;
     private String name;
     private String size;

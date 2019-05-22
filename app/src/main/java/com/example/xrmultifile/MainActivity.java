@@ -41,13 +41,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == 715){
+        if (requestCode == 715 && data != null) {
             ArrayList<String> list = data.getStringArrayListExtra("data");
             StringBuilder sb = new StringBuilder();
-            for (String string:list){
-                sb.append(string+"\n");
+            for (String string : list) {
+                sb.append(string + "\n");
             }
-            Toast.makeText(this, sb.toString(),Toast.LENGTH_LONG).show();
+            Toast.makeText(this, sb.toString(), Toast.LENGTH_LONG).show();
         }
     }
 }
