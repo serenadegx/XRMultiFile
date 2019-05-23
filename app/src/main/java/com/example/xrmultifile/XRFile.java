@@ -3,6 +3,7 @@ package com.example.xrmultifile;
 import java.io.File;
 import java.io.Serializable;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 class XRFile implements Serializable {
@@ -25,6 +26,12 @@ class XRFile implements Serializable {
     private File file;
 
     public XRFile() {
+    }
+
+    public XRFile(int fileType, String name, String size) {
+        this.fileType = fileType;
+        this.name = name;
+        this.size = size;
     }
 
     public XRFile(File file) {
@@ -81,5 +88,11 @@ class XRFile implements Serializable {
             flag = false;
         }
         return flag;
+    }
+
+    @NonNull
+    @Override
+    public String toString() {
+        return this.getName();
     }
 }

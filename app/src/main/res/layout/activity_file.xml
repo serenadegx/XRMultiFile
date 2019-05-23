@@ -10,7 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:background="?attr/colorPrimary"
-        app:navigationIcon="@mipmap/back"
+        app:navigationIcon="@mipmap/ic_close"
         app:subtitleTextColor="@android:color/white"
         app:title="手机存储"
         app:titleTextColor="@android:color/white">
@@ -27,27 +27,61 @@
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv"
-        android:layout_weight="1"
-        android:layout_height="0dp"
-        android:layout_width="match_parent"/>
-    <FrameLayout
-        android:background="#333333"
         android:layout_width="match_parent"
-        android:layout_height="50dp">
-        <Spinner
-            android:id="@+id/spinner"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
 
-            android:layout_margin="10dp"
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:background="#333333">
+
+        <LinearLayout
+            android:id="@+id/ll_nav"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"></Spinner>
-        <TextView
-            android:id="@+id/tv_total"
-            android:text="已选"
-            android:textSize="16sp"
+            android:layout_height="match_parent"
+            android:padding="10dp"
+            android:layout_gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/tv_nav"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:padding="2dp"
+                android:text="手机存储"
+                android:textColor="@android:color/white"
+                android:textSize="16sp" />
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@mipmap/ic_arrow_nav" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/ll_select"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
             android:layout_gravity="right|center_vertical"
-            android:layout_margin="10dp"
-            android:textColor="@android:color/white"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:padding="10dp"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@mipmap/ic_arrow_select" />
+
+            <TextView
+                android:id="@+id/tv_total"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="已选"
+                android:padding="2dp"
+                android:textColor="@android:color/white"
+                android:textSize="16sp" />
+        </LinearLayout>
+
     </FrameLayout>
 </LinearLayout>

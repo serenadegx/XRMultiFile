@@ -8,16 +8,17 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.Settings;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 
@@ -36,20 +37,20 @@ import java.util.List;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.ListPopupWindow;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
-import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 
 public class FileActivity extends AppCompatActivity implements View.OnClickListener {
 
     public static final int PERMISSION_REQUEST_CODE = 1001;
 
     private Toolbar toolbar;
-    private Spinner spinner;
+    //    private Spinner spinner;
     private RecyclerView rv;
     private FileAdapter adapter;
     private LinkedList<XRFile> backStack;
@@ -59,27 +60,39 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
     private Button btSure;
     private int limit;
     private TextView tvTotal;
+    private TextView tvNav;
     private View notDataView;
     private FrameLayout frameLayout;
+    private LinearLayout llSelect;
+    private LinearLayout llNav;
+    private ListPopupWindow navWindow;
+    private ListPopupWindow selectWindow;
+    private boolean isBrowse;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        initData();
         setContentView(R.layout.activity_file);
         tvTotal = findViewById(R.id.tv_total);
-        spinner = findViewById(R.id.spinner);
         toolbar = findViewById(R.id.toolbar);
+        llSelect = findViewById(R.id.ll_select);
+        llNav = findViewById(R.id.ll_nav);
+        tvNav = findViewById(R.id.tv_nav);
         rv = findViewById(R.id.rv);
         notDataView = getLayoutInflater().inflate(R.layout.layout_empty, (ViewGroup) rv.getParent(), false);
+        initData();
+
         rv.setLayoutManager(new LinearLayoutManager(this));
         rv.addItemDecoration(new EMDecoration(this, EMDecoration.VERTICAL_LIST, R.drawable.list_divider, 10));
         btSure = findViewById(R.id.bt_sure);
         btSure.setOnClickListener(this);
+        llNav.setOnClickListener(this);
+        llSelect.setOnClickListener(this);
         initToolbar();
         initAdapter();
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
-            initFileData(Environment.getExternalStorageDirectory());
+            change(0);
+            initFileData(new File(custom.get(0).getPath()));
         } else {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, PERMISSION_REQUEST_CODE);
         }
@@ -87,15 +100,31 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onClick(View v) {
-        if (v.getId() == R.id.bt_sure) {
-            if (mSelects != null && mSelects.size() > 0) {
+        switch (v.getId()) {
+            case R.id.bt_sure:
                 ArrayList<String> list = new ArrayList<>();
                 for (XRFile xrFile : mSelects) {
                     list.add(xrFile.getFile().getAbsolutePath());
                 }
                 setResult(10001, new Intent().putStringArrayListExtra("data", list));
                 finish();
-            }
+                break;
+            case R.id.ll_nav:
+                if (navWindow != null && navWindow.isShowing()) {
+                    navWindow.dismiss();
+                } else {
+                    showListPopUpWindow(v);
+                }
+                break;
+            case R.id.ll_select:
+                if (mSelects != null && mSelects.size() > 0) {
+                    if (selectWindow != null && selectWindow.isShowing()) {
+                        selectWindow.dismiss();
+                    } else {
+                        showSelectWindow(v);
+                    }
+                }
+                break;
         }
     }
 
@@ -103,7 +132,8 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode == PERMISSION_REQUEST_CODE) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
-                initFileData(Environment.getExternalStorageDirectory());
+                change(0);
+                initFileData(new File(custom.get(0).getPath()));
             } else {
                 showPermissionDialog();
             }
@@ -130,6 +160,7 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
         custom = new ArrayList<>();
         external = Environment.getExternalStorageDirectory().getPath();
         CustomFile customPath = getIntent().getParcelableExtra("custom");
+        isBrowse = getIntent().getBooleanExtra("isBrowse", false);
         if (customPath != null && new File(customPath.getPath()).exists()) {
             custom.add(customPath);
             backStack.push(new XRFile(new File(customPath.getPath())));
@@ -137,12 +168,17 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
             backStack.push(new XRFile(Environment.getExternalStorageDirectory()));
         }
         custom.add(new CustomFile("手机存储", external));
-
+        llSelect.setVisibility(isBrowse ? View.GONE : View.VISIBLE);
     }
 
     private void initToolbar() {
         setSupportActionBar(toolbar);
-        toolbar.setNavigationOnClickListener(this);
+        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                finish();
+            }
+        });
     }
 
     private void initFileData(File rootFile) {
@@ -176,10 +212,9 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
                 return o1.getName().compareTo(o2.getName());
             }
         });
+        adapter.setNewData(list);
         if (list.size() < 1) {
             adapter.setEmptyView(notDataView);
-        }else {
-            adapter.setNewData(list);
         }
     }
 
@@ -188,7 +223,6 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
             data.setFileType(XRFile.FOLDER);
             return;
         }
-        Log.i("mango", "type:" + file.getName().substring(file.getName().indexOf(".") + 1));
         switch (file.getName().substring(file.getName().indexOf(".") + 1)) {
             case "mp4":
                 data.setFileType(XRFile.VIDEO);
@@ -224,26 +258,9 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
 
     private void initAdapter() {
         limit = getIntent().getIntExtra("limit", 1);
-        spinner.setAdapter(new ArrayAdapter<>(this,
-                android.R.layout.simple_list_item_1, custom));
-        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                backStack.clear();
-                backStack.push(new XRFile(new File(custom.get(position).getPath())));
-                toolbar.setTitle(custom.get(position).getName());
-                toolbar.setSubtitle("");
-                initFileData(new File(custom.get(position).getPath()));
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-
-            }
-        });
 
         adapter = new FileAdapter(limit);
+        adapter.setBrowse(isBrowse);
         rv.setAdapter(adapter);
         adapter.setItemClickListener(new FileAdapter.ItemClickListener() {
             @Override
@@ -278,9 +295,54 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
         });
     }
 
+    private void showListPopUpWindow(View v) {
+        navWindow = new ListPopupWindow(this);
+        ArrayAdapter adapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_list_item_1, custom);
+        navWindow.setAdapter(adapter);
+//        navWindow.setModal(false);
+        navWindow.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                change(position);
+                initFileData(new File(custom.get(position).getPath()));
+                navWindow.dismiss();
+            }
+        });
+        navWindow.setAnchorView(v);
+        navWindow.show();
+    }
+
+    private void change(int position) {
+        backStack.clear();
+        backStack.push(new XRFile(new File(custom.get(position).getPath())));
+        toolbar.setTitle(custom.get(position).getName());
+        toolbar.setSubtitle("");
+        tvNav.setText(custom.get(position).getName());
+    }
+
+    private void showSelectWindow(View v) {
+        selectWindow = new ListPopupWindow(this);
+        ArrayAdapter adapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_list_item_1, mSelects);
+        selectWindow.setAdapter(adapter);
+        selectWindow.setModal(false);
+        selectWindow.setAnchorView(v);
+        selectWindow.show();
+    }
+
     private void start2Player(String type, File file) {
         Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.setDataAndType(Uri.fromFile(file), type);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            String authority = getPackageName() + ".provider";
+            Uri contentUri = FileProvider.getUriForFile(this, authority, file);
+            intent.setDataAndType(contentUri, type);
+        } else {
+            intent.setDataAndType(Uri.fromFile(file), type);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        }
         startActivity(intent);
     }
 
@@ -362,7 +424,6 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
     }
 
 
-
     public String getPrintSize(long size) {
         //如果字节数少于1024，则直接以B为单位，否则先除于1024，后3位因太少无意义
         if (size < 1024) {
@@ -392,8 +453,10 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    public static void start2FileActivity(Context context) {
-        context.startActivity(new Intent(context, FileActivity.class));
+    public static void start2FileActivity(Context context, CustomFile data, boolean isBrowse) {
+        context.startActivity(new Intent(context, FileActivity.class)
+                .putExtra("custom", data)
+                .putExtra("isBrowse", isBrowse));
     }
 
     public static void start2FileActivity(Context context, CustomFile data, int limit) {
@@ -407,4 +470,5 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
                 .putExtra("custom", data)
                 .putExtra("limit", limit), 715);
     }
+
 }

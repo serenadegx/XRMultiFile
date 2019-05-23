@@ -29,11 +29,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.bt_select:
-//                FileActivity.start2FileActivity(this, new CustomFile("新马达", Environment.getExternalStorageDirectory().getPath() + "/新马达"), 3);
-                FileActivity.startForResult2FileActivity(this, null, 3);
+                FileActivity.startForResult2FileActivity(this, new CustomFile("新马达", Environment.getExternalStorageDirectory().getPath() + "/新马达"), 3);
+//                FileActivity.startForResult2FileActivity(this, null, 3);
                 break;
             case R.id.bt_browse:
-                FileActivity.start2FileActivity(this, null, 3);
+                FileActivity.start2FileActivity(this, null, true);
                 break;
         }
     }

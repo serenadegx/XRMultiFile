@@ -6,7 +6,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
-import android.widget.CompoundButton;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -14,7 +13,6 @@ import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,9 +20,9 @@ import androidx.annotation.NonNull;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.RecyclerView;
 
-import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
-
-public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder> {
+public class FileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+    private static final int EMPTY = 0;
+    private static final int ITAM = 1;
     private FrameLayout mEmptyLayout;
     private Context mContext;
     private List<XRFile> mData = new ArrayList<>();
@@ -32,6 +30,8 @@ public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder
     private ItemClickListener mItemClickListener;
     private ItemSelectListener mItemSelectListener;
     private int mLimit = 1;
+    private boolean isUseEmpty = false;
+    private boolean isBrowse;
 
     public FileAdapter() {
     }
@@ -46,89 +46,129 @@ public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder
 
     @NonNull
     @Override
-    public FileViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        RecyclerView.ViewHolder holder;
         mContext = parent.getContext();
-        View view = LayoutInflater.from(mContext).inflate(R.layout.item_file, parent, false);
-        return new FileViewHolder(view);
+        if (viewType == EMPTY) {
+            Log.i("mango", "onCreateViewHolder");
+            holder = new EmptyViewHolder(mEmptyLayout);
+        } else {
+            holder = new FileViewHolder(LayoutInflater.from(mContext).inflate(R.layout.item_file, parent, false));
+        }
+        return holder;
     }
 
     @Override
-    public void onBindViewHolder(@NonNull final FileViewHolder holder, final int position) {
-        final XRFile file = mData.get(position);
-        switch (file.getFileType()) {
-            case 0:     //Directory
-                holder.iv.setImageResource(R.mipmap.ic_folder);
-                break;
-            case 1:     //picture
-                Picasso.get()
-                        .load(file.getFile())
-                        .resize(px2dp(200), px2dp(200))
-                        .centerCrop()
-                        .into(holder.iv);
-                break;
-            case 2:     //video
-                holder.iv.setImageResource(R.mipmap.ic_video);
-                break;
-            case 3:     //audio
-                holder.iv.setImageResource(R.mipmap.ic_music);
-                break;
-            case 4:     //pdf
-                holder.iv.setImageResource(R.mipmap.ic_pdf);
-                break;
-            case 5:     //word
-                holder.iv.setImageResource(R.mipmap.ic_word);
-                break;
-            case 6:     //sheet
-                holder.iv.setImageResource(R.mipmap.ic_excel);
-                break;
-            case 7:     //ppt
-                holder.iv.setImageResource(R.mipmap.ic_ppt);
-                break;
-            case 8:     //txt
-                holder.iv.setImageResource(R.mipmap.ic_txt);
-                break;
-            case 9:     //zip
-                holder.iv.setImageResource(R.mipmap.ic_zip);
-                break;
-            default:    //other
-                holder.iv.setImageResource(R.mipmap.ic_blank);
-                break;
-        }
-        holder.cb.setChecked(mSelects.contains(file));
-        holder.llSelect.setVisibility(file.getFile().isDirectory() ? View.GONE : View.VISIBLE);
-        holder.name.setText(file.getName());
-        holder.des.setText(file.getFileType() == XRFile.FOLDER ? file.getSize() : file.getSize() +
-                "    " + file.getTime());
-        holder.next.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (mItemClickListener != null) {
-                    mItemClickListener.onItemClickListener(v, file, position);
-                }
+    public void onBindViewHolder(@NonNull final RecyclerView.ViewHolder holder, final int position) {
+        if (holder instanceof FileViewHolder) {
+            final FileViewHolder fileViewHolder = (FileViewHolder) holder;
+            ((FileViewHolder) holder).llSelect.setVisibility(isBrowse ? View.GONE : View.VISIBLE);
+            final XRFile file = mData.get(position);
+            switch (file.getFileType()) {
+                case 0:     //Directory
+                    fileViewHolder.iv.setImageResource(R.mipmap.ic_folder);
+                    break;
+                case 1:     //picture
+                    Picasso.get()
+                            .load(file.getFile())
+                            .resize(px2dp(200), px2dp(200))
+                            .centerCrop()
+                            .into(fileViewHolder.iv);
+                    break;
+                case 2:     //video
+                    fileViewHolder.iv.setImageResource(R.mipmap.ic_video);
+                    break;
+                case 3:     //audio
+                    fileViewHolder.iv.setImageResource(R.mipmap.ic_music);
+                    break;
+                case 4:     //pdf
+                    fileViewHolder.iv.setImageResource(R.mipmap.ic_pdf);
+                    break;
+                case 5:     //word
+                    fileViewHolder.iv.setImageResource(R.mipmap.ic_word);
+                    break;
+                case 6:     //sheet
+                    fileViewHolder.iv.setImageResource(R.mipmap.ic_excel);
+                    break;
+                case 7:     //ppt
+                    fileViewHolder.iv.setImageResource(R.mipmap.ic_ppt);
+                    break;
+                case 8:     //txt
+                    fileViewHolder.iv.setImageResource(R.mipmap.ic_txt);
+                    break;
+                case 9:     //zip
+                    fileViewHolder.iv.setImageResource(R.mipmap.ic_zip);
+                    break;
+                default:    //other
+                    fileViewHolder.iv.setImageResource(R.mipmap.ic_blank);
+                    break;
             }
-        });
-        holder.cb.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                if (holder.cb.isChecked()) {
-                    if (mSelects.size() < mLimit) {
-                        mSelects.add(file);
-                    } else {
-                        holder.cb.setChecked(false);
+            fileViewHolder.cb.setChecked(mSelects.contains(file));
+            if (isBrowse) {
+                fileViewHolder.llSelect.setVisibility(View.GONE);
+            } else {
+                fileViewHolder.llSelect.setVisibility(file.getFile().isDirectory() ? View.GONE : View.VISIBLE);
+            }
+            fileViewHolder.name.setText(file.getName());
+            fileViewHolder.des.setText(file.getFileType() == XRFile.FOLDER ? file.getSize() : file.getSize() +
+                    "    " + file.getTime());
+            fileViewHolder.next.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (mItemClickListener != null) {
+                        mItemClickListener.onItemClickListener(v, file, position);
                     }
-                } else {
-                    mSelects.remove(file);
                 }
-                mItemSelectListener.onItemSelectListener(v, mSelects, position);
-            }
-        });
+            });
+            fileViewHolder.cb.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
 
+                    if (fileViewHolder.cb.isChecked()) {
+                        if (mSelects.size() < mLimit) {
+                            mSelects.add(file);
+                        } else {
+                            fileViewHolder.cb.setChecked(false);
+                        }
+                    } else {
+                        mSelects.remove(file);
+                    }
+                    mItemSelectListener.onItemSelectListener(v, mSelects, position);
+                }
+            });
+        } else {
+            Log.i("mango", "onBindViewHolder");
+        }
+
+    }
+
+    public int getEmptyViewCount() {
+        if (mEmptyLayout == null || mEmptyLayout.getChildCount() == 0) {
+            return 0;
+        }
+        if (mData.size() != 0) {
+            return 0;
+        }
+        return 1;
     }
 
     @Override
     public int getItemCount() {
+        if (getEmptyViewCount() == 1) {
+            return 1;
+        }
         return mData.size();
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        if (position == 0 && mEmptyLayout != null && isUseEmpty) {
+            Log.i("mango", "getItemViewType");
+            isUseEmpty = false;
+            return EMPTY;
+        } else {
+            return ITAM;
+        }
     }
 
     public void setNewData(List<XRFile> data) {
@@ -147,6 +187,11 @@ public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder
 
     public void setItemSelectListener(ItemSelectListener mItemSelectListener) {
         this.mItemSelectListener = mItemSelectListener;
+    }
+
+    public void setBrowse(boolean isBrowse) {
+        this.isBrowse = isBrowse;
+        notifyDataSetChanged();
     }
 
     class FileViewHolder extends RecyclerView.ViewHolder {
@@ -168,6 +213,13 @@ public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder
         }
     }
 
+    class EmptyViewHolder extends RecyclerView.ViewHolder {
+
+        public EmptyViewHolder(@NonNull View itemView) {
+            super(itemView);
+        }
+    }
+
     public interface ItemClickListener {
         void onItemClickListener(View v, XRFile file, int position);
     }
@@ -177,7 +229,8 @@ public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder
     }
 
     public void setEmptyView(View emptyView) {
-        boolean insert = false;
+        isUseEmpty = true;
+        Log.i("mango", "setEmptyView");
         if (mEmptyLayout == null) {
             mEmptyLayout = new FrameLayout(emptyView.getContext());
             final RecyclerView.LayoutParams layoutParams = new RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
@@ -187,13 +240,9 @@ public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder
                 layoutParams.height = lp.height;
             }
             mEmptyLayout.setLayoutParams(layoutParams);
-            insert = true;
         }
         mEmptyLayout.removeAllViews();
         mEmptyLayout.addView(emptyView);
-        if (insert) {
-            notifyItemInserted(0);
-        }
-
+        notifyItemInserted(0);
     }
 }
