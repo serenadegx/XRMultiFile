@@ -56,11 +56,12 @@ Add the dependency
                         .limit(5)
                         .select(activity, 715);
 			
-              protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+          protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
 		if (requestCode == 715 && data != null) {
-            		ArrayList<String> list = XRMultiFile.getSelectResult(data);
+            	   ArrayList<String> list = XRMultiFile.getSelectResult(data);
         	}
-	      }
+	  }
+	     
 # 附：
 
 1.office文件的浏览使用的腾讯的TBS
