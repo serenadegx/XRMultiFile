@@ -54,3 +54,8 @@ Add the dependency
                         .custom(file)
                         .limit(5)
                         .select(activity, 715);
+	protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+		if (requestCode == 715 && data != null) {
+            		ArrayList<String> list = XRMultiFile.getSelectResult(data);
+        	}
+	}
