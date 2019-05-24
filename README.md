@@ -32,11 +32,12 @@ Add it in your root build.gradle at the end of repositories:
 Add the dependency
 
 	dependencies {
+		...
 	        implementation 'com.github.serenadegx:XRMultiFile:1.0.0'
+		
 	}
 
 
-	}
   
   文件浏览器：
   
@@ -60,3 +61,10 @@ Add the dependency
             		ArrayList<String> list = XRMultiFile.getSelectResult(data);
         	}
 	      }
+附：
+
+office文件使用的腾讯的TBS
+
+图片加载及缓存策略使用的Picasso
+
+音频和视频的打开调用的系统
