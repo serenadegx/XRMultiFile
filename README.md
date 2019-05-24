@@ -15,7 +15,7 @@
 7.已做6.0权限适配，和7.0 FileProvider 适配
 
 ![image](https://github.com/serenadegx/XRMultiFile/blob/master/1558675141407.gif)
-![image](https://github.com/serenadegx/XRWebview/blob/master/1546404544823.gif)
+![image](https://github.com/serenadegx/XRMultiFile/blob/master/1558675580829.gif)
 
 
 # 使用
