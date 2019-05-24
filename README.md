@@ -63,8 +63,8 @@ Add the dependency
 	      }
 附：
 
-office文件使用的腾讯的TBS
+1.office文件的浏览使用的腾讯的TBS
 
-图片加载及缓存策略使用的Picasso
+2.图片加载及缓存策略使用的Picasso
 
-音频和视频的打开调用的系统
+3.音频和视频的打开调用的系统
