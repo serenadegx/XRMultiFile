@@ -32,7 +32,7 @@ Add it in your root build.gradle at the end of repositories:
 Add the dependency
 
 	dependencies {
-	        implementation 'com.github.serenadegx:XRWebview:1.1.2'
+	        implementation 'com.github.serenadegx:XRMultiFile:1.0.0'
 	}
 
 
@@ -54,8 +54,9 @@ Add the dependency
                         .custom(file)
                         .limit(5)
                         .select(activity, 715);
-	protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+			
+              protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
 		if (requestCode == 715 && data != null) {
             		ArrayList<String> list = XRMultiFile.getSelectResult(data);
         	}
-	}
+	      }
