@@ -1,4 +1,4 @@
-package com.example.xrmultifile;
+package com.example.multifile.entity;
 
 import java.io.File;
 import java.io.Serializable;
@@ -6,7 +6,7 @@ import java.io.Serializable;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-class XRFile implements Serializable {
+public class XRFile implements Serializable {
 
     public static final int FOLDER = 0;
     public static final int PICTURE = 1;

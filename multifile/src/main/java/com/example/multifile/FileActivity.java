@@ -1,4 +1,4 @@
-package com.example.xrmultifile;
+package com.example.multifile;
 
 import android.Manifest;
 import android.app.Activity;
@@ -19,8 +19,12 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
-import android.widget.Spinner;
 import android.widget.TextView;
+
+import com.example.multifile.adapter.FileAdapter;
+import com.example.multifile.entity.CustomFile;
+import com.example.multifile.entity.XRFile;
+import com.example.multifile.ui.EMDecoration;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -48,6 +52,7 @@ import androidx.recyclerview.widget.RecyclerView;
 public class FileActivity extends AppCompatActivity implements View.OnClickListener {
 
     public static final int PERMISSION_REQUEST_CODE = 1001;
+    public static final String EXTRA_RESULT = "data";
 
     private Toolbar toolbar;
     //    private Spinner spinner;
@@ -67,6 +72,7 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
     private LinearLayout llNav;
     private ListPopupWindow navWindow;
     private ListPopupWindow selectWindow;
+    private boolean lookHidden;
     private boolean isBrowse;
 
     @Override
@@ -78,13 +84,13 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
         llSelect = findViewById(R.id.ll_select);
         llNav = findViewById(R.id.ll_nav);
         tvNav = findViewById(R.id.tv_nav);
+        btSure = findViewById(R.id.bt_sure);
         rv = findViewById(R.id.rv);
         notDataView = getLayoutInflater().inflate(R.layout.layout_empty, (ViewGroup) rv.getParent(), false);
         initData();
 
         rv.setLayoutManager(new LinearLayoutManager(this));
         rv.addItemDecoration(new EMDecoration(this, EMDecoration.VERTICAL_LIST, R.drawable.list_divider, 10));
-        btSure = findViewById(R.id.bt_sure);
         btSure.setOnClickListener(this);
         llNav.setOnClickListener(this);
         llSelect.setOnClickListener(this);
@@ -100,31 +106,27 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onClick(View v) {
-        switch (v.getId()) {
-            case R.id.bt_sure:
-                ArrayList<String> list = new ArrayList<>();
-                for (XRFile xrFile : mSelects) {
-                    list.add(xrFile.getFile().getAbsolutePath());
-                }
-                setResult(10001, new Intent().putStringArrayListExtra("data", list));
-                finish();
-                break;
-            case R.id.ll_nav:
-                if (navWindow != null && navWindow.isShowing()) {
-                    navWindow.dismiss();
+        if (R.id.bt_sure == v.getId()) {
+            ArrayList<String> list = new ArrayList<>();
+            for (XRFile xrFile : mSelects) {
+                list.add(xrFile.getFile().getAbsolutePath());
+            }
+            setResult(10001, new Intent().putStringArrayListExtra(EXTRA_RESULT, list));
+            finish();
+        } else if (R.id.ll_nav == v.getId()) {
+            if (navWindow != null && navWindow.isShowing()) {
+                navWindow.dismiss();
+            } else {
+                showListPopUpWindow(v);
+            }
+        } else if (R.id.ll_select == v.getId()) {
+            if (mSelects != null && mSelects.size() > 0) {
+                if (selectWindow != null && selectWindow.isShowing()) {
+                    selectWindow.dismiss();
                 } else {
-                    showListPopUpWindow(v);
+                    showSelectWindow(v);
                 }
-                break;
-            case R.id.ll_select:
-                if (mSelects != null && mSelects.size() > 0) {
-                    if (selectWindow != null && selectWindow.isShowing()) {
-                        selectWindow.dismiss();
-                    } else {
-                        showSelectWindow(v);
-                    }
-                }
-                break;
+            }
         }
     }
 
@@ -161,6 +163,7 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
         external = Environment.getExternalStorageDirectory().getPath();
         CustomFile customPath = getIntent().getParcelableExtra("custom");
         isBrowse = getIntent().getBooleanExtra("isBrowse", false);
+        lookHidden = getIntent().getBooleanExtra("lookHidden", false);
         if (customPath != null && new File(customPath.getPath()).exists()) {
             custom.add(customPath);
             backStack.push(new XRFile(new File(customPath.getPath())));
@@ -168,6 +171,7 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
             backStack.push(new XRFile(Environment.getExternalStorageDirectory()));
         }
         custom.add(new CustomFile("手机存储", external));
+        btSure.setVisibility(isBrowse ? View.GONE : View.VISIBLE);
         llSelect.setVisibility(isBrowse ? View.GONE : View.VISIBLE);
     }
 
@@ -181,12 +185,51 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
         });
     }
 
+    private void initAdapter() {
+        limit = getIntent().getIntExtra("limit", 1);
+
+        adapter = new FileAdapter(limit);
+        adapter.setBrowse(isBrowse);
+        rv.setAdapter(adapter);
+        adapter.setItemClickListener(new FileAdapter.ItemClickListener() {
+            @Override
+            public void onItemClickListener(View v, XRFile file, int position) {
+                if (file.getFile().isDirectory()) {
+                    backStack.push(file);
+                    initFileData(file.getFile());
+                    String path = file.getFile().getPath();
+                    toolbar.setSubtitle(path.substring(external.length()));
+                } else {
+                    if (file.getFileType() == XRFile.PICTURE) {
+                        ShowActivity.start2ShowActivity(FileActivity.this, file);
+                    } else if (file.getFileType() == XRFile.VIDEO) {
+                        start2Player("video/*", file.getFile());
+                    } else if (file.getFileType() == XRFile.AUDIO) {
+                        start2Player("audio/*", file.getFile());
+                    } else if (file.getFileType() == XRFile.PDF || file.getFileType() == XRFile.WORD ||
+                            file.getFileType() == XRFile.PPT || file.getFileType() == XRFile.EXCEL ||
+                            file.getFileType() == XRFile.TXT) {
+                        ShowActivity.start2ShowActivity(FileActivity.this, file);
+                    }
+                }
+            }
+        });
+        adapter.setItemSelectListener(new FileAdapter.ItemSelectListener() {
+            @Override
+            public void onItemSelectListener(View v, List<XRFile> selects, int position) {
+                mSelects = selects;
+                btSure.setText(mSelects.size() > 0 ? "确定(" + mSelects.size() + "/" + limit + ")" : "确定");
+                tvTotal.setText(mSelects.size() > 0 ? "已选：" + getTotal() : "");
+            }
+        });
+    }
+
     private void initFileData(File rootFile) {
         List<XRFile> list = new ArrayList<>();
         if (rootFile != null && rootFile.exists() && rootFile.isDirectory()) {
             File[] files = rootFile.listFiles();
             for (File file : files) {
-                if (!file.isHidden()) {
+                if (!file.isHidden() || lookHidden) {
                     XRFile data = new XRFile();
                     data.setFile(file);
                     data.setName(file.getName());
@@ -254,45 +297,6 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
                 data.setFileType(XRFile.OTHER);
                 break;
         }
-    }
-
-    private void initAdapter() {
-        limit = getIntent().getIntExtra("limit", 1);
-
-        adapter = new FileAdapter(limit);
-        adapter.setBrowse(isBrowse);
-        rv.setAdapter(adapter);
-        adapter.setItemClickListener(new FileAdapter.ItemClickListener() {
-            @Override
-            public void onItemClickListener(View v, XRFile file, int position) {
-                if (file.getFile().isDirectory()) {
-                    backStack.push(file);
-                    initFileData(file.getFile());
-                    String path = file.getFile().getPath();
-                    toolbar.setSubtitle(path.substring(external.length()));
-                } else {
-                    if (file.getFileType() == XRFile.PICTURE) {
-                        ShowActivity.start2ShowActivity(FileActivity.this, file);
-                    } else if (file.getFileType() == XRFile.VIDEO) {
-                        start2Player("video/*", file.getFile());
-                    } else if (file.getFileType() == XRFile.AUDIO) {
-                        start2Player("audio/*", file.getFile());
-                    } else if (file.getFileType() == XRFile.PDF || file.getFileType() == XRFile.WORD ||
-                            file.getFileType() == XRFile.PPT || file.getFileType() == XRFile.EXCEL ||
-                            file.getFileType() == XRFile.TXT) {
-                        ShowActivity.start2ShowActivity(FileActivity.this, file);
-                    }
-                }
-            }
-        });
-        adapter.setItemSelectListener(new FileAdapter.ItemSelectListener() {
-            @Override
-            public void onItemSelectListener(View v, List<XRFile> selects, int position) {
-                mSelects = selects;
-                btSure.setText(mSelects.size() > 0 ? "确定(" + mSelects.size() + "/" + limit + ")" : "确定");
-                tvTotal.setText(mSelects.size() > 0 ? "已选：" + getTotal() : "");
-            }
-        });
     }
 
     private void showListPopUpWindow(View v) {
@@ -378,9 +382,18 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
     private String getDirectorySize(File file) {
         String size = "文件：";
         int count = 0;
-        if (file != null && file.isDirectory()) {
-            count = file.list().length;
+        if (lookHidden) {
+            if (file != null && file.isDirectory()) {
+                count = file.list().length;
+            }
+        } else {
+            for (File data : file.listFiles()) {
+                if (!data.isHidden()) {
+                    count++;
+                }
+            }
         }
+
         return size + count;
     }
 
@@ -453,22 +466,17 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    public static void start2FileActivity(Context context, CustomFile data, boolean isBrowse) {
+    public static void start2FileActivity(Context context, boolean lookHidden, CustomFile data, boolean isBrowse) {
         context.startActivity(new Intent(context, FileActivity.class)
+                .putExtra("lookHidden", lookHidden)
                 .putExtra("custom", data)
                 .putExtra("isBrowse", isBrowse));
     }
 
-    public static void start2FileActivity(Context context, CustomFile data, int limit) {
-        context.startActivity(new Intent(context, FileActivity.class)
-                .putExtra("custom", data)
-                .putExtra("limit", limit));
-    }
-
-    public static void startForResult2FileActivity(Activity activity, CustomFile data, int limit) {
+    public static void startForResult2FileActivity(Activity activity, boolean lookHidden, CustomFile data, int limit, int requestCode) {
         activity.startActivityForResult(new Intent(activity, FileActivity.class)
                 .putExtra("custom", data)
-                .putExtra("limit", limit), 715);
+                .putExtra("limit", limit), requestCode);
     }
 
 }

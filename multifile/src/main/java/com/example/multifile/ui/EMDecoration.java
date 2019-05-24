@@ -1,10 +1,12 @@
-package com.example.xrmultifile;
+package com.example.multifile.ui;
 
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
 import android.view.View;
+
+import com.example.multifile.R;
 
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;

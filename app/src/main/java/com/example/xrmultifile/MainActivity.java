@@ -7,8 +7,10 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.example.multifile.XRMultiFile;
+
+import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -29,11 +31,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.bt_select:
-                FileActivity.startForResult2FileActivity(this, new CustomFile("新马达", Environment.getExternalStorageDirectory().getPath() + "/新马达"), 3);
-//                FileActivity.startForResult2FileActivity(this, null, 3);
+                XRMultiFile.get()
+                        .with(this)
+                        .custom(new File(Environment.getExternalStorageDirectory().getPath() + "/新马达"))
+                        .limit(5)
+                        .select(this, 715);
                 break;
             case R.id.bt_browse:
-                FileActivity.start2FileActivity(this, null, true);
+                XRMultiFile.get()
+                        .with(this)
+                        .browse();
                 break;
         }
     }
@@ -42,7 +49,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == 715 && data != null) {
-            ArrayList<String> list = data.getStringArrayListExtra("data");
+            ArrayList<String> list = XRMultiFile.getSelectResult(data);
             StringBuilder sb = new StringBuilder();
             for (String string : list) {
                 sb.append(string + "\n");

@@ -1,4 +1,4 @@
-package com.example.xrmultifile;
+package com.example.multifile.entity;
 
 import android.os.Parcel;
 import android.os.Parcelable;

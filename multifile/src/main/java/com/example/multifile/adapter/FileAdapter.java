@@ -1,4 +1,4 @@
-package com.example.xrmultifile;
+package com.example.multifile.adapter;
 
 import android.content.Context;
 import android.util.Log;
@@ -11,6 +11,8 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.example.multifile.R;
+import com.example.multifile.entity.XRFile;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;

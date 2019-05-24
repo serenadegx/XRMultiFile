@@ -1,4 +1,4 @@
-package com.example.xrmultifile;
+package com.example.multifile;
 
 import android.content.Context;
 import android.content.Intent;
@@ -7,6 +7,8 @@ import android.view.View;
 import android.widget.FrameLayout;
 
 import com.bm.library.PhotoView;
+import com.example.multifile.entity.XRFile;
+import com.example.multifile.ui.SuperFileView;
 import com.squareup.picasso.Picasso;
 
 import androidx.annotation.Nullable;

@@ -1,4 +1,4 @@
-package com.example.xrmultifile;
+package com.example.multifile.ui;
 
 import android.content.Context;
 import android.os.Bundle;
