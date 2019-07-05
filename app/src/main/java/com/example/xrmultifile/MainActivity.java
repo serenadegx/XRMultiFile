@@ -33,6 +33,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.bt_select:
                 XRMultiFile.get()
                         .with(this)
+                        .lookHiddenFile(false)
                         .custom(new File(Environment.getExternalStorageDirectory().getPath() + "/新马达"))
                         .limit(5)
                         .select(this, 715);
@@ -40,6 +41,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.bt_browse:
                 XRMultiFile.get()
                         .with(this)
+                        .lookHiddenFile(false)
                         .browse();
                 break;
         }
