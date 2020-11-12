@@ -33,7 +33,7 @@ Add the dependency
 
 	dependencies {
 		...
-	        implementation 'com.github.serenadegx:XRMultiFile:1.0.0'
+	        implementation 'com.github.serenadegx:XRMultiFile:1.0.1'
 		
 	}
 
