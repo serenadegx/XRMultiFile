@@ -34,7 +34,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 XRMultiFile.get()
                         .with(this)
                         .lookHiddenFile(false)
-                        .custom(new File(Environment.getExternalStorageDirectory().getPath() + "/新马达"))
+//                        .custom(new File(Environment.getExternalStorageDirectory().getPath() + "/新马达"))
+                        .setFilter(".pdf")
                         .limit(5)
                         .select(this, 715);
                 break;

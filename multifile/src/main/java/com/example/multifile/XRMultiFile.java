@@ -44,6 +44,7 @@ public class XRMultiFile {
         private Context context;
         private int limit;
         private CustomFile customFile;
+        private String suffix;
         private boolean lookHidden;
 
         public FileCreator(Context context) {
@@ -78,6 +79,11 @@ public class XRMultiFile {
             return this;
         }
 
+        public FileCreator setFilter(String suffix) {
+            this.suffix = suffix;
+            return this;
+        }
+
         public void browse() {
             checkMain();
             checkContext(context);
@@ -87,7 +93,7 @@ public class XRMultiFile {
         public void select(Activity activity, int requestCode) {
             checkMain();
             checkActivity(activity);
-            FileActivity.startForResult2FileActivity(activity, lookHidden, customFile, limit, requestCode);
+            FileActivity.startForResult2FileActivity(activity, lookHidden, customFile, suffix, limit, requestCode);
         }
     }
 

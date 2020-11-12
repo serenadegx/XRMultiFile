@@ -12,6 +12,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.Settings;
+import android.text.TextUtils;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -74,6 +75,8 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
     private ListPopupWindow selectWindow;
     private boolean lookHidden;
     private boolean isBrowse;
+    private List<XRFile> mFilterData = new ArrayList<>();
+    private String mSuffix;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -98,7 +101,11 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
         initAdapter();
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
             change(0);
-            initFileData(new File(custom.get(0).getPath()));
+            if (TextUtils.isEmpty(mSuffix)) {
+                initFileData(new File(custom.get(0).getPath()));
+            } else {
+                showFilterFile();
+            }
         } else {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, PERMISSION_REQUEST_CODE);
         }
@@ -135,7 +142,11 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
         if (requestCode == PERMISSION_REQUEST_CODE) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
                 change(0);
-                initFileData(new File(custom.get(0).getPath()));
+                if (TextUtils.isEmpty(mSuffix)) {
+                    initFileData(new File(custom.get(0).getPath()));
+                } else {
+                    showFilterFile();
+                }
             } else {
                 showPermissionDialog();
             }
@@ -164,15 +175,16 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
         CustomFile customPath = getIntent().getParcelableExtra("custom");
         isBrowse = getIntent().getBooleanExtra("isBrowse", false);
         lookHidden = getIntent().getBooleanExtra("lookHidden", false);
-        if (customPath != null && new File(customPath.getPath()).exists()) {
-            custom.add(customPath);
-            backStack.push(new XRFile(new File(customPath.getPath())));
-        } else {
-            backStack.push(new XRFile(Environment.getExternalStorageDirectory()));
-        }
+        mSuffix = getIntent().getStringExtra("suffix");
         custom.add(new CustomFile("手机存储", external));
         btSure.setVisibility(isBrowse ? View.GONE : View.VISIBLE);
         llSelect.setVisibility(isBrowse ? View.GONE : View.VISIBLE);
+        if (customPath != null && new File(customPath.getPath()).exists()) {
+            custom.add(customPath);
+            backStack.push(new XRFile(new File(customPath.getPath())));
+        } else if (customPath == null || !(new File(customPath.getPath()).exists())) {
+            backStack.push(new XRFile(Environment.getExternalStorageDirectory()));
+        }
     }
 
     private void initToolbar() {
@@ -299,6 +311,47 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
+    /**
+     * 筛选文件根据类型
+     *
+     * @param rootFile
+     * @param suffix
+     */
+    private void filterByFileType(File rootFile, String suffix) {
+        if (rootFile != null && rootFile.exists() && rootFile.isDirectory()) {
+            File[] files = rootFile.listFiles();
+            for (File file :
+                    files) {
+                if (file.isFile() && suffix.equals(file.getName().substring(file.getName().lastIndexOf(".") + 1))) {
+                    XRFile data = new XRFile();
+                    data.setFile(file);
+                    data.setName(file.getName());
+                    data.setSize(getPrintSize(getRealSize(file)));
+                    data.setTime(getPrintTime(file.lastModified()));
+                    setFileType(file, data);
+                    mFilterData.add(data);
+                } else if (file.isDirectory()) {
+                    filterByFileType(file, suffix);
+                }
+            }
+        }
+        Collections.sort(mFilterData, new Comparator<XRFile>() {
+            @Override
+            public int compare(XRFile o1, XRFile o2) {
+                return (o1.getFile().lastModified() - o2.getFile().lastModified()) > 0 ? -1 : 1;
+            }
+        });
+    }
+
+    private void showFilterFile() {
+        filterByFileType(Environment.getExternalStorageDirectory(), getIntent().getStringExtra("suffix"));
+        adapter.setNewData(mFilterData);
+        if (mFilterData.size() < 1) {
+            adapter.setEmptyView(notDataView);
+        }
+    }
+
+
     private void showListPopUpWindow(View v) {
         navWindow = new ListPopupWindow(this);
         ArrayAdapter adapter = new ArrayAdapter<>(this,
@@ -414,7 +467,8 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
         } else {                                                //其他
             data = new SimpleDateFormat("yyyy年MM月dd日").format(new Date(time));
         }
-        return data;
+//        return data;
+        return new SimpleDateFormat("yyyy年MM月dd日").format(new Date(time));
     }
 
     private long getRealSize(File file) {
@@ -473,10 +527,18 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
                 .putExtra("isBrowse", isBrowse));
     }
 
-    public static void startForResult2FileActivity(Activity activity, boolean lookHidden, CustomFile data, int limit, int requestCode) {
+    public static void startForResult2FileActivity(Activity activity, boolean lookHidden, CustomFile data, String suffix, int limit, int requestCode) {
         activity.startActivityForResult(new Intent(activity, FileActivity.class)
                 .putExtra("custom", data)
+                .putExtra("suffix", suffix)
                 .putExtra("limit", limit), requestCode);
+    }
+
+    public static void start2FileActivity(Context context, boolean lookHidden, String suffix, boolean isBrowse) {
+        context.startActivity(new Intent(context, FileActivity.class)
+                .putExtra("lookHidden", lookHidden)
+                .putExtra("suffix", suffix)
+                .putExtra("isBrowse", isBrowse));
     }
 
 }

@@ -139,7 +139,7 @@ public class FileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 }
             });
         } else {
-            Log.i("mango", "onBindViewHolder");
+            Log.i("mango", "EmptyViewHolder");
         }
 
     }
@@ -165,8 +165,6 @@ public class FileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     @Override
     public int getItemViewType(int position) {
         if (position == 0 && mEmptyLayout != null && isUseEmpty) {
-            Log.i("mango", "getItemViewType");
-            isUseEmpty = false;
             return EMPTY;
         } else {
             return ITAM;
@@ -175,6 +173,9 @@ public class FileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     public void setNewData(List<XRFile> data) {
         mData = data;
+        if (mData != null && !data.isEmpty()) {
+            isUseEmpty = false;
+        }
         notifyDataSetChanged();
     }
 
@@ -245,6 +246,6 @@ public class FileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
         mEmptyLayout.removeAllViews();
         mEmptyLayout.addView(emptyView);
-        notifyItemInserted(0);
+        notifyDataSetChanged();
     }
 }
