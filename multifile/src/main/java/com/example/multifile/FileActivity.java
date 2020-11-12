@@ -3,6 +3,7 @@ package com.example.multifile;
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -104,7 +105,7 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
             if (TextUtils.isEmpty(mSuffix)) {
                 initFileData(new File(custom.get(0).getPath()));
             } else {
-                showFilterFile();
+                showFilterFile(new File(custom.get(0).getPath()));
             }
         } else {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, PERMISSION_REQUEST_CODE);
@@ -145,7 +146,7 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
                 if (TextUtils.isEmpty(mSuffix)) {
                     initFileData(new File(custom.get(0).getPath()));
                 } else {
-                    showFilterFile();
+                    showFilterFile(new File(custom.get(0).getPath()));
                 }
             } else {
                 showPermissionDialog();
@@ -314,10 +315,11 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
     /**
      * 筛选文件根据类型
      *
+     * @param list
      * @param rootFile
      * @param suffix
      */
-    private void filterByFileType(File rootFile, String suffix) {
+    private void filterByFileType(List<XRFile> list, File rootFile, String suffix) {
         if (rootFile != null && rootFile.exists() && rootFile.isDirectory()) {
             File[] files = rootFile.listFiles();
             for (File file :
@@ -329,13 +331,13 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
                     data.setSize(getPrintSize(getRealSize(file)));
                     data.setTime(getPrintTime(file.lastModified()));
                     setFileType(file, data);
-                    mFilterData.add(data);
+                    list.add(data);
                 } else if (file.isDirectory()) {
-                    filterByFileType(file, suffix);
+                    filterByFileType(list, file, suffix);
                 }
             }
         }
-        Collections.sort(mFilterData, new Comparator<XRFile>() {
+        Collections.sort(list, new Comparator<XRFile>() {
             @Override
             public int compare(XRFile o1, XRFile o2) {
                 return (o1.getFile().lastModified() - o2.getFile().lastModified()) > 0 ? -1 : 1;
@@ -343,12 +345,44 @@ public class FileActivity extends AppCompatActivity implements View.OnClickListe
         });
     }
 
-    private void showFilterFile() {
-        filterByFileType(Environment.getExternalStorageDirectory(), getIntent().getStringExtra("suffix"));
-        adapter.setNewData(mFilterData);
-        if (mFilterData.size() < 1) {
-            adapter.setEmptyView(notDataView);
-        }
+    private void getFilterByFileTypeData(final File rootFile, final String suffix, final LoadDataListener listener) {
+        new Thread() {
+            @Override
+            public void run() {
+                List<XRFile> data = new ArrayList<>();
+                filterByFileType(data, rootFile, suffix);
+                Collections.sort(data, new Comparator<XRFile>() {
+                    @Override
+                    public int compare(XRFile o1, XRFile o2) {
+                        return (o1.getFile().lastModified() - o2.getFile().lastModified()) > 0 ? -1 : 1;
+                    }
+                });
+                listener.onLoadSuccess(data);
+            }
+        }.start();
+    }
+
+    public interface LoadDataListener {
+        void onLoadSuccess(List<XRFile> data);
+    }
+
+    private void showFilterFile(File root) {
+        final ProgressDialog dialog = ProgressDialog.show(this, "", "加载中...", false, false);
+        getFilterByFileTypeData(root, getIntent().getStringExtra("suffix"), new LoadDataListener() {
+            @Override
+            public void onLoadSuccess(final List<XRFile> data) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        dialog.cancel();
+                        adapter.setNewData(data);
+                        if (data.size() < 1) {
+                            adapter.setEmptyView(notDataView);
+                        }
+                    }
+                });
+            }
+        });
     }
 
 
